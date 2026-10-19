@@ -1,0 +1,106 @@
+# Checks GitHub -> Claude workload identity federation from both sides, without a stored key
+# and without spending tokens (it only lists models).
+#
+#   push to main (this file)       -> the exchange must be DENIED: the federation rule only
+#                                     accepts issue_comment and issues events
+#   "/wif-test" comment by owner   -> the exchange must be ALLOWED, and the token must work
+#
+# The four IDs come from repository variables. They are identifiers, not secrets, but the
+# workflow never prints them: logs of a public repo are public.
+
+name: wif-smoke-test
+
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/wif-smoke-test.yml"]
+  issue_comment:
+    types: [created]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  exchange:
+    if: >-
+      github.event_name == 'push' ||
+      (startsWith(github.event.comment.body, '/wif-test') &&
+       github.event.comment.author_association == 'OWNER')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      EXPECT: ${{ github.event_name == 'push' && 'deny' || 'allow' }}
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
+    steps:
+      - name: Check the repository variables
+        run: |
+          missing=0
+          for v in ANTHROPIC_FEDERATION_RULE_ID ANTHROPIC_ORGANIZATION_ID ANTHROPIC_SERVICE_ACCOUNT_ID ANTHROPIC_WORKSPACE_ID; do
+            if [ -z "${!v}" ]; then echo "::error::repository variable $v is not set"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Fetch the GitHub OIDC token
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const token = await core.getIDToken('https://api.anthropic.com');
+            core.setSecret(token);
+            core.exportVariable('JWT', token);
+            // The claims the federation rule matches on. Public facts about this run, not secrets.
+            const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+            for (const k of ['sub', 'event_name', 'ref', 'repository', 'repository_id', 'repository_owner_id', 'aud']) {
+              core.info(`${k.padEnd(20)} ${claims[k]}`);
+            }
+
+      - name: Exchange it for a Claude access token
+        run: |
+          jq -n --arg jwt "$JWT" '{
+            grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            assertion: $jwt,
+            federation_rule_id: env.ANTHROPIC_FEDERATION_RULE_ID,
+            organization_id: env.ANTHROPIC_ORGANIZATION_ID,
+            service_account_id: env.ANTHROPIC_SERVICE_ACCOUNT_ID,
+            workspace_id: env.ANTHROPIC_WORKSPACE_ID
+          }' > request.json
+          status=$(curl -sS -o response.json -w '%{http_code}' \
+            -H 'content-type: application/json' \
+            --data @request.json https://api.anthropic.com/v1/oauth/token)
+          rm request.json
+          echo "HTTP $status (expected: $EXPECT)"
+
+          if [ "$EXPECT" = "deny" ]; then
+            if [ "$status" = "200" ]; then
+              echo "::error::a push run got a token; the rule is too loose"
+              exit 1
+            fi
+            jq -r '.error.message // .error // .' response.json
+            echo "Denied as expected. The reason is on the Console's authentication history page."
+            exit 0
+          fi
+
+          if [ "$status" != "200" ]; then
+            jq -r '.error.message // .error // .' response.json
+            echo "::error::exchange refused; see Console -> Workload identity -> authentication history"
+            exit 1
+          fi
+          token=$(jq -r .access_token response.json)
+          echo "::add-mask::$token"
+          echo "ACCESS_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "token lifetime: $(jq -r .expires_in response.json) s"
+          rm response.json
+
+      - name: Use the token (free call, lists models)
+        if: env.EXPECT == 'allow'
+        run: |
+          status=$(curl -sS -o models.json -w '%{http_code}' \
+            -H "authorization: Bearer $ACCESS_TOKEN" \
+            -H 'anthropic-version: 2023-06-01' \
+            https://api.anthropic.com/v1/models)
+          echo "GET /v1/models: HTTP $status"
+          [ "$status" = "200" ] || { jq . models.json; exit 1; }
+          echo "models visible to the service account: $(jq '.data | length' models.json)"
