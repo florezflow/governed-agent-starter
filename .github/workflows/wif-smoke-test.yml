@@ -5,8 +5,13 @@
 #                                     accepts issue_comment and issues events
 #   "/wif-test" comment by owner   -> the exchange must be ALLOWED, and the token must work
 #
-# The four IDs come from repository variables. They are identifiers, not secrets, but the
-# workflow never prints them: logs of a public repo are public.
+# The four IDs come from repository variables. They are identifiers, not credentials: without a
+# GitHub token from this repository, branch and event they are useless. GitHub shows them in the
+# run log (every step's env block), and logs of a public repo are public.
+#
+# A deny only proves something with the right reason: check the Console's authentication history.
+# For the push run it must be the event condition, not match_subject_prefix. GitHub may send the
+# subject with IDs (repo:owner@ID/repo@ID:ref:...), which the classic pattern never matches.
 
 name: wif-smoke-test
 
