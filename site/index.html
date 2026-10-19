@@ -111,9 +111,30 @@
     </div>
   </section>
 
+  <section class="section" id="faq">
+    <div class="wrap">
+      <p class="label">03 — faq</p>
+      <h2>Cost, limits and how to stop it</h2>
+      <ul class="faq">
+        <li>
+          <h3>What does it cost?</h3>
+          <p>A monthly spend limit of US$20 on its own workspace. Each run stops after 40 turns or 20 minutes.</p>
+        </li>
+        <li>
+          <h3>What can't it do?</h3>
+          <p>It can't merge, approve or push to <code>main</code>. It can't change its own rules in <code>.github/</code>, <code>.claude/</code> or <code>CLAUDE.md</code>.</p>
+        </li>
+        <li>
+          <h3>How do I stop it?</h3>
+          <p>Cancel the run in the Actions tab. To stop every run, disable the workflow there. To revoke its access, remove the Claude GitHub App from the repository.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
   <section class="section" id="try">
     <div class="wrap">
-      <p class="label">03 — try it</p>
+      <p class="label">04 — try it</p>
       <h2>Comment one of these on an issue</h2>
       <div class="code-card">
         <div class="prompt"><code><b>@claude</b> add a FAQ section with three questions a team lead would ask</code><button class="copy" type="button">copy</button></div>
