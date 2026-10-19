@@ -57,3 +57,6 @@ jobs:
           anthropic_workspace_id: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
           # Never add anthropic_api_key here: a static key silently wins over federation.
           claude_args: --model claude-sonnet-5-5 --max-turns 30
+          # TEMPORARY, to read why the first API call fails (run 39291418900). Prints Claude's
+          # whole session into the public log; remove once fixed.
+          show_full_output: true

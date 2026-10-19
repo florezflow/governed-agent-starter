@@ -109,3 +109,25 @@ jobs:
           echo "GET /v1/models: HTTP $status"
           [ "$status" = "200" ] || { jq . models.json; exit 1; }
           echo "models visible to the service account: $(jq '.data | length' models.json)"
+
+      # Listing models is free, so it proves the login but not billing. This one billed call
+      # (a few tokens, a fraction of a cent) proves the workspace can actually spend, with the
+      # same model the agent uses. On failure it prints the API's error type and message.
+      - name: Make one billed call (same model as the agent)
+        if: env.EXPECT == 'allow'
+        env:
+          MODEL: claude-sonnet-5-5
+        run: |
+          jq -n --arg model "$MODEL" '{model: $model, max_tokens: 16,
+            messages: [{role: "user", content: "Reply with the single word OK."}]}' > msg.json
+          status=$(curl -sS -o reply.json -w '%{http_code}' \
+            -H "authorization: Bearer $ACCESS_TOKEN" \
+            -H 'anthropic-version: 2023-06-01' \
+            -H 'content-type: application/json' \
+            --data @msg.json https://api.anthropic.com/v1/messages)
+          echo "POST /v1/messages ($MODEL): HTTP $status"
+          if [ "$status" != "200" ]; then
+            jq '{type: .error.type, message: .error.message}' reply.json
+            exit 1
+          fi
+          jq -r '"reply: \(.content[0].text // "-")  tokens in/out: \(.usage.input_tokens)/\(.usage.output_tokens)"' reply.json
