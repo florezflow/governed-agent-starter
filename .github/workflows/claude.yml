@@ -1,13 +1,14 @@
 # @claude: mention it in an issue, in a pull request conversation, or in a new issue. Claude works
-# on a GitHub-hosted runner, pushes a branch and opens a pull request. It can't merge: the
-# ruleset on main requires your review.
+# on a GitHub-hosted runner, follows CLAUDE.md, DESIGN.md and the site-change skill, takes before
+# and after screenshots with Playwright MCP (.mcp.json), and opens the pull request itself. It
+# can't merge: the ruleset on main requires your review.
 #
 # Authentication: workload identity federation. GitHub's short-lived OIDC token is exchanged for a
 # Claude token through the federation rule; no API key exists anywhere. The rule only accepts
 # issue_comment and issues runs on main from this repository.
 #
 # Brakes: only people with write access start a run (checked here and again by the action),
-# one run per issue at a time, at most 30 turns, 20 minutes, and the workspace's monthly spend
+# one run per issue at a time, at most 40 turns, 20 minutes, and the workspace's monthly spend
 # limit in the Claude Console. Model: Haiku 5.5, the cheapest; switch to claude-sonnet-5-5 for
 # harder, multi-file changes.
 #
@@ -53,6 +54,15 @@ jobs:
         with:
           fetch-depth: 1
 
+      # The site-change skill screenshots http://localhost:4173/ before and after the change.
+      - name: Serve the site
+        run: nohup python3 -m http.server 4173 --directory site > "$RUNNER_TEMP/site.log" 2>&1 &
+
+      # Downloads the pinned Playwright MCP once, so it starts within Claude Code's MCP timeout.
+      # It drives the runner's preinstalled Google Chrome (--browser chrome in .mcp.json).
+      - name: Warm up Playwright MCP
+        run: npx -y @playwright/mcp@0.0.83 --version
+
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
@@ -60,4 +70,15 @@ jobs:
           anthropic_service_account_id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
           anthropic_workspace_id: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
           # Never add anthropic_api_key here: a static key silently wins over federation.
-          claude_args: --model claude-haiku-5-5 --max-turns 30
+          #
+          # --allowedTools adds to the action's defaults (read files, comment, git add/commit/push).
+          # File edits are already allowed inside the repo by the action's acceptEdits mode; don't
+          # list Edit or Write here, that would allow writes anywhere on the runner. Naming an
+          # mcp__github__ tool makes the action start GitHub's MCP server with its app token, so
+          # Claude can open and update the pull request itself. .claude/settings.json holds the
+          # same allow list for local use and the deny rules (no edits to the guardrails).
+          claude_args: |
+            --model claude-haiku-5-5
+            --max-turns 40
+            --allowedTools "Skill,Bash(node scripts/check-design.mjs),Bash(git status),Bash(git diff *),Bash(git rev-parse *),mcp__playwright__browser_navigate,mcp__playwright__browser_resize,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_snapshot,mcp__playwright__browser_wait_for,mcp__playwright__browser_close,mcp__github__create_pull_request,mcp__github__update_pull_request"
+            --append-system-prompt "For any change to the website, use the site-change skill. When you have pushed your branch, open the pull request yourself with mcp__github__create_pull_request (base: main) as the skill describes; do not only post a 'Create a PR' link. Never merge."

@@ -1,0 +1,37 @@
+# Publishes site/ to GitHub Pages whenever a change to it lands on main. Merging Claude's pull
+# request is what makes the change live. One-time setup: Settings → Pages → Source: GitHub Actions.
+
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Design check
+        run: node scripts/check-design.mjs
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

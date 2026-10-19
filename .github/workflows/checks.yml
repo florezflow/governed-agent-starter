@@ -1,0 +1,21 @@
+# The design check from DESIGN.md on every pull request and on main. Becomes a required status
+# check in the ruleset, so nothing that breaks the design language can be merged.
+
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  design:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Design check
+        run: node scripts/check-design.mjs
