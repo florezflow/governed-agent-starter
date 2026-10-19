@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Governed Agent Starter: agents open the PRs, you still merge</title>
+  <meta name="description" content="A GitHub repo where an AI agent turns issues into pull requests with a plan, checks and screenshots, and can't merge without you. No API key stored.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#">Governed Agent Starter<span>v0.1</span></a>
+    <nav class="site-nav" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#guardrails">Guardrails</a>
+      <a href="#try">Try it</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <p class="label">00 — the outcome</p>
+        <h1>Agents open the PRs. You still merge.</h1>
+        <p class="lead">Comment <code>@claude</code> on a GitHub issue. A few minutes later there is a pull request with a plan, passing checks and screenshots, waiting for your review.</p>
+        <ul class="facts" aria-label="Facts">
+          <li>setup <b>|←— 60 min —→|</b></li>
+          <li>API keys stored: <b>0</b></li>
+          <li>merges without you: <b>0</b></li>
+        </ul>
+        <div class="actions">
+          <a class="btn is-signal" href="https://github.com/florezflow/governed-agent-starter">Get the starter kit</a>
+          <a class="btn" href="https://github.com/florezflow/governed-agent-starter/pulls?q=is%3Apr">See the agent's pull requests</a>
+        </div>
+      </div>
+
+      <article class="pr-card" aria-label="Example pull request opened by the agent">
+        <header><span>claude[bot] opened #12</span><span>2 min ago</span></header>
+        <h3>Add a FAQ section with three questions</h3>
+        <ul class="checklist">
+          <li>Plan in the description <span class="chip works">done</span></li>
+          <li>Design check <span class="chip works">0 problems</span></li>
+          <li>Screenshots, desktop and phone <span class="chip works">attached</span></li>
+          <li>Your review <span class="chip open">required</span></li>
+        </ul>
+        <div class="shots" aria-hidden="true">
+          <div class="shot"><i></i><i></i><i></i><i class="y"></i></div>
+          <div class="shot"><i></i><i></i><i class="y"></i></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="wrap">
+      <p class="label">01 — how it works</p>
+      <h2>From issue to reviewed change in four steps</h2>
+      <ol class="steps">
+        <li class="step">
+          <h3>You write an issue</h3>
+          <p>Plain words, with <code>@claude</code> in it: "add a FAQ section".</p>
+        </li>
+        <li class="step">
+          <h3>The agent works</h3>
+          <p>In GitHub Actions. It reads <code>CLAUDE.md</code>, <code>DESIGN.md</code> and its skill before it touches a file.</p>
+        </li>
+        <li class="step">
+          <h3>It opens the PR</h3>
+          <p>With the plan, the design check result and before and after screenshots.</p>
+        </li>
+        <li class="step">
+          <h3>You decide</h3>
+          <p>Review, ask for changes with another <code>@claude</code>, or merge. Merging publishes the site.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="guardrails">
+    <div class="wrap">
+      <p class="label">02 — guardrails</p>
+      <h2>What the agent can't do</h2>
+      <ul class="receipts">
+        <li>
+          <div><h3>Use a stored API key</h3><p>GitHub's short-lived OIDC token is swapped for a 10-minute Claude token. No secret in the repo.</p></div>
+          <span class="chip works">0 keys</span>
+        </li>
+        <li>
+          <div><h3>Run from anywhere else</h3><p>One federation rule: this repository, the <code>main</code> branch, comment and issue events only.</p></div>
+          <span class="chip works">1 rule</span>
+        </li>
+        <li>
+          <div><h3>Spend without a ceiling</h3><p>A monthly spend limit on its own workspace, 40 turns and 20 minutes per run.</p></div>
+          <span class="chip works">US$20 cap</span>
+        </li>
+        <li>
+          <div><h3>Rewrite its own rules</h3><p>Edits to <code>.github/</code>, <code>.claude/</code> and <code>CLAUDE.md</code> are denied in its settings.</p></div>
+          <span class="chip works">denied</span>
+        </li>
+        <li>
+          <div><h3>Merge its own work</h3><p>A ruleset on <code>main</code> requires a human review and a passing design check.</p></div>
+          <span class="chip open">next step</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="try">
+    <div class="wrap">
+      <p class="label">03 — try it</p>
+      <h2>Comment one of these on an issue</h2>
+      <div class="code-card">
+        <div class="prompt"><code><b>@claude</b> add a FAQ section with three questions a team lead would ask</code><button class="copy" type="button">copy</button></div>
+        <div class="prompt"><code><b>@claude</b> add a dark mode that follows the system setting</code><button class="copy" type="button">copy</button></div>
+        <div class="prompt"><code><b>@claude</b> make the guardrails section easier to scan on a phone</code><button class="copy" type="button">copy</button></div>
+      </div>
+      <p class="note">Only people with write access to the repository can start the agent. Use the kit in your own repository to try it yourself.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span>Governed Agent Starter · MIT licence</span>
+    <span>Built by Marco Florez · <a href="https://florezflow.com">florezflow.com</a></span>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.copy').forEach((button) => {
+    button.addEventListener('click', async () => {
+      const text = button.previousElementSibling.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = 'copied';
+      } catch {
+        button.textContent = 'select and copy';
+      }
+      setTimeout(() => { button.textContent = 'copy'; }, 1600);
+    });
+  });
+</script>
+</body>
+</html>

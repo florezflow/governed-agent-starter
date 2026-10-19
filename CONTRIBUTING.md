@@ -17,18 +17,18 @@ Be specific about the task. Good requests name the files, the behaviour you want
 
 1. Reads the issue or comment, plus the repository files it needs.
 2. For a question or a review request, replies in its single comment. It does not change code unless asked.
-3. For an implementation request, makes the change on a branch named `claude/issue-<number>-<timestamp>`, commits it, and pushes the branch.
-4. Posts a link to create the pull request. Review it, then merge it yourself if it's right.
+3. For a change to the website, follows the `site-change` skill (`.claude/skills/site-change/`): a plan, the change in `site/`, the design check from `DESIGN.md`, and before and after screenshots taken with Playwright MCP.
+4. Commits on a branch named `claude/issue-<number>-<timestamp>`, pushes it, and opens the pull request itself, with the plan, the check result and the screenshots. Review it, then merge it yourself if it's right.
 
 Claude edits its one comment as it works: a checklist of tasks, then a summary at the end. It doesn't post new comments.
 
 ## Limits
 
-- **Runs are capped**: 30 turns and 20 minutes per run. A large task may stop before it finishes; split it into smaller issues.
+- **Runs are capped**: 40 turns and 20 minutes per run. A large task may stop before it finishes; split it into smaller issues.
 - **One run per issue at a time**. A second `@claude` on the same issue waits for the first run to finish. Runs are not cancelled.
 - **Model**: Claude runs on Haiku 5.5, the cheapest model. For harder, multi-file changes the workflow can be switched to `claude-sonnet-5-5` in `.github/workflows/claude.yml`.
 - **Spend limit**: runs stop when the workspace's monthly spend limit in the Claude Console is reached.
-- **No workflow changes**: the GitHub App cannot modify files under `.github/workflows/`. Those changes must be made by a human.
+- **No changes to its own guardrails**: `.claude/settings.json` denies edits to `.github/`, `.claude/`, `CLAUDE.md`, `.mcp.json` and `scripts/`. Those changes must be made by a human.
 - **No merging, no approving**: Claude can't merge branches, rebase, or submit formal PR reviews.
 
 ## Reviewing Claude's work
