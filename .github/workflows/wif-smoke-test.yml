@@ -116,7 +116,7 @@ jobs:
       - name: Make one billed call (same model as the agent)
         if: env.EXPECT == 'allow'
         env:
-          MODEL: claude-sonnet-5-5
+          MODEL: claude-haiku-5-5
         run: |
           jq -n --arg model "$MODEL" '{model: $model, max_tokens: 16,
             messages: [{role: "user", content: "Reply with the single word OK."}]}' > msg.json
