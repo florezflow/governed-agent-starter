@@ -97,7 +97,9 @@ jobs:
 
       # The site-change skill screenshots http://localhost:4173/ before and after the change.
       - name: Serve the site
-        run: nohup python3 -m http.server 4173 --directory site > "$RUNNER_TEMP/site.log" 2>&1 &
+        run: |
+          mkdir -p .agent
+          nohup python3 -m http.server 4173 --directory site > "$RUNNER_TEMP/site.log" 2>&1 &
 
       # With CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1, Claude Code refuses to start without bubblewrap. The
       # action installs it only when allowed_non_write_users is set; maintainer and approved runs
@@ -119,7 +121,8 @@ jobs:
       - name: Warm up Playwright MCP
         run: npx -y @playwright/mcp@0.0.83 --version
 
-      - uses: anthropics/claude-code-action@v1
+      - id: claude
+        uses: anthropics/claude-code-action@v1
         with:
           anthropic_federation_rule_id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
           anthropic_organization_id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
@@ -151,14 +154,33 @@ jobs:
           # --allowedTools adds to the read-only defaults. Exact git commands only: `git diff <args>`
           # could read any file on the runner (--no-index), including the process environment.
           # acceptEdits lets Claude edit files inside
-          # the repository only; don't list Edit or Write, that would allow writes anywhere on the
-          # runner. No mcp__github__ tools: Claude doesn't push or open the pull request, the deliver
+          # the repository only. Edit and Write are listed only with a path (site/, screenshots/,
+          # .agent/); a bare Edit or Write would allow writes anywhere on the runner. No mcp__github__ tools: Claude doesn't push or open the pull request, the deliver
           # job does. .claude/settings.json holds the same allow list and the deny rules.
           claude_args: |
             --model claude-haiku-5-5
             --max-turns 40
             --permission-mode acceptEdits
-            --allowedTools "Skill,Bash(node scripts/check-design.mjs),Bash(git status),Bash(git diff),Bash(git diff --stat),mcp__playwright__browser_navigate,mcp__playwright__browser_resize,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_snapshot,mcp__playwright__browser_wait_for,mcp__playwright__browser_close"
+            --allowedTools "Skill,Write(./site/**),Edit(./site/**),Write(./screenshots/**),Write(./.agent/**),Edit(./.agent/**),Bash(node scripts/check-design.mjs),Bash(git status),Bash(git diff),Bash(git diff --stat),Bash(ls),Bash(ls *),mcp__playwright__browser_navigate,mcp__playwright__browser_resize,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_snapshot,mcp__playwright__browser_wait_for,mcp__playwright__browser_click,mcp__playwright__browser_hover,mcp__playwright__browser_press_key,mcp__playwright__browser_console_messages,mcp__playwright__browser_close"
+
+      # The action hides Claude's output. This prints only the tools Claude called (name and target),
+      # the calls that were refused and its last message, so a run that does nothing can be explained.
+      - name: Show what Claude did
+        if: always() && steps.claude.outputs.execution_file != ''
+        env:
+          EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+        run: |
+          [ -f "$EXECUTION_FILE" ] || exit 0
+          {
+            echo "### Tool calls"
+            jq -r '.[] | select(.type=="assistant") | .message.content[]? | select(.type=="tool_use")
+              | "- \(.name) \((.input.file_path // .input.command // .input.url // .input.filename // .input.skill // "") | tostring | .[0:120])"' "$EXECUTION_FILE"
+            echo; echo "### Refused"
+            jq -r '.[] | select(.type=="result") | .permission_denials[]?
+              | "- \(.tool_name) \((.tool_input.file_path // .tool_input.command // .tool_input.url // (.tool_input|tostring)) | tostring | .[0:160])"' "$EXECUTION_FILE"
+            echo; echo "### Last message"
+            jq -r '.[] | select(.type=="result") | (.result // "") | .[0:1500]' "$EXECUTION_FILE"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Only site/ and screenshots/ go into the diff. Anything else Claude touched is listed, not sent.
       - name: Package the change

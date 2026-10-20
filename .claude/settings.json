@@ -12,7 +12,18 @@
       "mcp__playwright__browser_take_screenshot",
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_wait_for",
-      "mcp__playwright__browser_close"
+      "mcp__playwright__browser_close",
+      "Write(./site/**)",
+      "Edit(./site/**)",
+      "Write(./screenshots/**)",
+      "Write(./.agent/**)",
+      "Edit(./.agent/**)",
+      "Bash(ls)",
+      "Bash(ls *)",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_hover",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_console_messages"
     ],
     "deny": [
       "Edit(/.github/**)",
