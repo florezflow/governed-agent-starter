@@ -8,6 +8,9 @@ description: Make a change to the demo website in site/ with a plan, a passing d
 You produce a change a human can review in two minutes: the plan, the diff, the check result and
 screenshots. Do the steps in order. `<n>` is the issue number from the prompt.
 
+Use the Read, Edit and Write tools for files; `.agent/` already exists, so no `mkdir` is needed. The
+only shell commands you have are the design check, `git status`, `git diff` and `ls`.
+
 You don't commit, push or open the pull request, and you have no tools for it. When you finish, the
 deliver job (no model) takes your changes in `site/` and `screenshots/`, checks them again and opens
 the pull request with your title and summary. Changes anywhere else are dropped.
