@@ -121,6 +121,7 @@ h3 { font-size: 19px; font-weight: 700; }
   font: 500 14px var(--font-mono); }
 .facts b { font-weight: 700; }
 .actions { display: flex; flex-wrap: wrap; gap: 16px; }
+.goat { display: block; width: 240px; height: auto; margin-top: 40px; }
 
 .pr-card {
   background: var(--card);
