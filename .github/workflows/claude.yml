@@ -99,6 +99,21 @@ jobs:
       - name: Serve the site
         run: nohup python3 -m http.server 4173 --directory site > "$RUNNER_TEMP/site.log" 2>&1 &
 
+      # With CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1, Claude Code refuses to start without bubblewrap. The
+      # action installs it only when allowed_non_write_users is set; maintainer and approved runs
+      # need it too. Same commands as the action's own step. Ubuntu 24.04 restricts unprivileged
+      # user namespaces through AppArmor, which bubblewrap needs.
+      - name: Install bubblewrap for subprocess isolation
+        run: |
+          for i in 1 2 3; do
+            sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends bubblewrap socat && break
+            echo "apt-get attempt $i failed, retrying..."; sleep 5
+          done
+          command -v bwrap >/dev/null || { echo "::error::bubblewrap is not installed"; exit 1; }
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       # Downloads the pinned Playwright MCP once, so it starts within Claude Code's MCP timeout.
       # .mcp.json limits the browser to http://localhost:4173 and blocks file:// URLs.
       - name: Warm up Playwright MCP
