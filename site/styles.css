@@ -167,8 +167,15 @@ h3 { font-size: 19px; font-weight: 700; }
 /* ---------- faq ---------- */
 
 .faq { list-style: none; margin: 0; padding: 0; display: grid; gap: 20px; }
-.faq li { background: var(--card); border: var(--outline); border-radius: var(--radius); padding: 24px; }
-.faq p { margin: 8px 0 0; font-size: 15px; color: var(--muted); }
+.faq li { background: var(--card); border: var(--outline); border-radius: var(--radius); }
+.faq summary { display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 24px; cursor: pointer; list-style: none; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq .toggle { flex: none; display: grid; place-items: center; width: 32px; height: 32px;
+  border: 1.5px solid var(--ink); border-radius: var(--radius-pill); font: 700 18px/1 var(--font-mono); }
+.faq .toggle::before { content: "+"; }
+.faq details[open] .toggle::before { content: "\2212"; }
+.faq details p { margin: 0; padding: 0 24px 24px; font-size: 15px; color: var(--muted); }
 .faq code { font: 500 13px var(--font-mono); color: var(--ink); }
 
 /* ---------- try it ---------- */
