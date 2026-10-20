@@ -6,7 +6,6 @@
       "Bash(node scripts/check-design.mjs)",
       "Bash(git status)",
       "Bash(git diff *)",
-      "Bash(git rev-parse *)",
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_resize",
       "mcp__playwright__browser_take_screenshot",
@@ -25,7 +24,25 @@
       "Bash(curl *)",
       "Bash(wget *)",
       "WebFetch",
-      "WebSearch"
+      "WebSearch",
+      "Read(//proc/**)",
+      "Read(//sys/**)",
+      "Read(./.git/**)",
+      "Edit(./.git/**)",
+      "Edit(./.gitignore)",
+      "Edit(./.gitattributes)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(env)",
+      "Bash(printenv *)",
+      "mcp__github",
+      "Edit(./.github/**)",
+      "Edit(./.claude/**)",
+      "Edit(./CLAUDE.md)",
+      "Edit(./.mcp.json)",
+      "Edit(./scripts/**)",
+      "Edit(./site/**/*.js)",
+      "Edit(./site/*.js)"
     ]
   }
 }

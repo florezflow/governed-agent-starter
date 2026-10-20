@@ -55,6 +55,10 @@ All colours, fonts and shapes are CSS custom properties in the `:root` block at 
 8. **Accessible by default.** Every page has `lang`, a `<title>` and a viewport meta tag; every
    image has an `alt` text. **[checked]** Contrast is at least 4.5:1 for text; the focus ring is a
    3px ink outline; motion respects `prefers-reduced-motion`.
+9. **Safe to publish.** Pages show content; they don't run code, collect input or send visitors
+   elsewhere. No inline scripts or event handlers (the only script is `site/copy.js`, which people
+   maintain), no frames, embeds or forms, no `javascript:` or `data:` URLs, and links only within
+   the site or to `florezflow.com`, `florezflow.github.io` and `github.com`. **[checked]**
 
 ## Components
 

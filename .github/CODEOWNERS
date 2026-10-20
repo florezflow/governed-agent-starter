@@ -1,0 +1,9 @@
+# The ruleset on main requires a code owner's review, so every change to main needs the owner.
+# The guardrails are listed on their own so the intent is visible; change the handle in your copy.
+*               @florezflow
+/.github/       @florezflow
+/.claude/       @florezflow
+/scripts/       @florezflow
+/CLAUDE.md      @florezflow
+/.mcp.json      @florezflow
+/site/*.js      @florezflow

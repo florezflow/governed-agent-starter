@@ -1,5 +1,7 @@
-# The design check from DESIGN.md on every pull request and on main. Becomes a required status
-# check in the ruleset, so nothing that breaks the design language can be merged.
+# The design and safety check from DESIGN.md on every pull request and on main. It is the required
+# status check in the ruleset, so nothing that breaks the design language can be merged.
+# workflow_dispatch: the agent's pull requests are pushed with the workflow token, which starts no
+# workflows, so the deliver job starts this one on the agent's branch.
 
 name: checks
 
@@ -7,6 +9,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,3 +22,5 @@ jobs:
       - uses: actions/checkout@v6
       - name: Design check
         run: node scripts/check-design.mjs
+      - name: Tests for the gate and the deliver checks
+        run: node --test scripts/*.test.mjs

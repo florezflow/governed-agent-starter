@@ -1,0 +1,65 @@
+# Puts the demo site back to its baseline once a week, or when you run it by hand. It opens a pull
+# request that restores site/ from the tag `baseline`; you merge it like any other change, and
+# merging publishes the site. Nothing is reset without that merge.
+#
+# One-time setup: tag the commit whose site/ is the baseline and push the tag:
+#   git tag baseline <commit> && git push origin baseline
+# Move the baseline later with: git tag -f baseline <commit> && git push -f origin baseline
+
+name: reset-demo
+
+on:
+  schedule:
+    - cron: "17 4 * * 1" # Mondays, 04:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  reset:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    env:
+      BRANCH: chore/reset-demo
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore site/ from the baseline tag
+        id: restore
+        run: |
+          if ! git fetch --depth 1 origin tag baseline 2>/dev/null; then
+            echo "::error::the tag 'baseline' doesn't exist; create it once: git tag baseline <commit> && git push origin baseline"
+            exit 1
+          fi
+          git rm -r -q site
+          git checkout baseline -- site
+          git add -A site
+          if git diff --cached --quiet; then
+            echo "site/ already matches the baseline; nothing to do"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git diff --cached --stat | tail -1
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the reset pull request
+        if: steps.restore.outputs.changed == 'true'
+        run: |
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -q -m "site: reset the demo to the baseline" -m "Restores site/ from the tag baseline ($(git rev-parse --short baseline))."
+          git push --force origin "HEAD:refs/heads/$BRANCH"
+          open=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=$GITHUB_REPOSITORY_OWNER:$BRANCH" --jq '.[0].html_url // empty')
+          if [ -z "$open" ]; then
+            open=$(gh api "repos/$GITHUB_REPOSITORY/pulls" -f title="site: reset the demo to the baseline" \
+              -f head="$BRANCH" -f base="${{ github.event.repository.default_branch }}" \
+              -f body="Restores \`site/\` from the tag \`baseline\`, so the demo starts fresh. Merging publishes it. Started by the \`reset-demo\` workflow." \
+              --jq .html_url)
+          fi
+          # Pushes with the workflow token start no workflows; start the required check by hand.
+          gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/checks.yml/dispatches" -f ref="$BRANCH"
+          echo "pull request: $open"

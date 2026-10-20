@@ -6,36 +6,51 @@ This repo lets a coding agent, Claude, open pull requests. Claude can't merge th
 
 Mention `@claude` in one of these places:
 
-- **A new issue**: put `@claude` in the title or the body. Claude runs when the issue is opened.
-- **A comment** on an issue or on a pull request conversation: any new comment that contains `@claude`.
+- **A new issue**: put `@claude` in the title or the body. The issue form does that for you.
+- **A comment** on an issue: any new comment that contains `@claude`. Comments on pull requests are
+  ignored; ask on the issue, and the agent updates the same pull request.
 
-Only people with the `OWNER`, `MEMBER`, or `COLLABORATOR` role on this repository can trigger a run. Anyone else's `@claude` is ignored. Claude only acts on the comment or issue that mentions it. Other comments in the thread are context, not instructions.
+Who starts the agent:
 
-Be specific about the task. Good requests name the files, the behaviour you want, and any constraints, for example: "@claude add a `--verbose` flag to `src/cli.py` and document it in the README."
+| Who | What happens |
+|---|---|
+| `OWNER`, `MEMBER` or `COLLABORATOR` | The agent starts. |
+| Someone on the allowlist (repository variable `AGENT_USERS`) | The agent starts, up to `AGENT_DAILY_QUOTA` requests in 24 hours (default 3). |
+| Anyone else | A comment explains how to sign up. A maintainer can approve the issue with the label `agent-approved`; the agent then starts on the issue text as it was at that moment. |
 
-## What Claude does
+Nobody needs rights in the repository to use the agent. Claude reads only the issue or comment that
+started it, as data: the request says what to change, and `CLAUDE.md` decides how.
 
-1. Reads the issue or comment, plus the repository files it needs.
-2. For a question or a review request, replies in its single comment. It does not change code unless asked.
-3. For a change to the website, follows the `site-change` skill (`.claude/skills/site-change/`): a plan, the change in `site/`, the design check from `DESIGN.md`, and before and after screenshots taken with Playwright MCP.
-4. Commits on a branch named `claude/issue-<number>-<timestamp>`, pushes it, and opens the pull request itself, with the plan, the check result and the screenshots. Review it, then merge it yourself if it's right.
+Be specific: name the section and the change, for example "@claude make the FAQ collapsible, one row
+per question."
 
-Claude edits its one comment as it works: a checklist of tasks, then a summary at the end. It doesn't post new comments.
+## What happens
+
+1. **Gate** (no model): decides as in the table above and posts a status comment with the run link.
+2. **Agent**: Claude follows the `site-change` skill (`.claude/skills/site-change/`): a plan, the
+   change in `site/`, the design check, and before and after screenshots taken with Playwright MCP.
+   It runs with a read-only token and writes a title and summary instead of committing.
+3. **Deliver** (no model): checks the diff with the scripts from `main`, commits it to
+   `agent/issue-<number>`, opens or updates the pull request and starts the required check. The
+   status comment then links the pull request, or says why there is none.
+4. **You** review and merge. Merging publishes the site.
 
 ## Limits
 
 - **Runs are capped**: 40 turns and 20 minutes per run. A large task may stop before it finishes; split it into smaller issues.
-- **One run per issue at a time**. A second `@claude` on the same issue waits for the first run to finish. Runs are not cancelled.
+- **One run per issue at a time**. A second `@claude` on the same issue waits for the first run to finish, and its change lands on the same pull request.
+- **Only the site**: the deliver job accepts changes to `site/` (HTML, CSS, SVG, images) and `screenshots/` only. JavaScript, docs and everything else are changed by people.
 - **Model**: Claude runs on Haiku 5.5, the cheapest model. For harder, multi-file changes the workflow can be switched to `claude-sonnet-5-5` in `.github/workflows/claude.yml`.
 - **Spend limit**: runs stop when the workspace's monthly spend limit in the Claude Console is reached.
-- **No changes to its own guardrails**: `.claude/settings.json` denies edits to `.github/`, `.claude/`, `CLAUDE.md`, `.mcp.json` and `scripts/`. Those changes must be made by a human.
-- **No merging, no approving**: Claude can't merge branches, rebase, or submit formal PR reviews.
+- **No changes to its own guardrails**: `.claude/settings.json` denies edits to `.github/`, `.claude/`, `CLAUDE.md`, `.mcp.json` and `scripts/`, and the deliver job drops them. Those changes must be made by a human.
+- **No pushing, merging or approving**: Claude has no write token. The ruleset on `main` requires a code owner's review.
 
 ## Reviewing Claude's work
 
 - Read the diff before merging. Claude can make mistakes, and its own summary may not match what the code does.
-- Ask for changes by commenting `@claude` on the pull request. Claude pushes follow-up commits to the existing branch.
-- Check the job run log linked from Claude's comment if a run fails or stops early.
+- Ask for changes by commenting `@claude` on the issue. The next run builds on the open pull request's branch.
+- Check the run linked from the status comment if a run fails or stops early.
+- The demo resets: `reset-demo.yml` opens a pull request every Monday that restores `site/` from the tag `baseline`.
 
 ## Setup and maintenance
 
