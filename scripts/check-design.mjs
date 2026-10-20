@@ -2,18 +2,22 @@
 // Design check for site/. Enforces the rules marked [checked] in DESIGN.md.
 // No dependencies: runs with any Node 18+.
 //
-//   node scripts/check-design.mjs        exit 0 when clean, 1 with a list of problems
+//   node scripts/check-design.mjs          exit 0 when clean, 1 with a list of problems
+//   node scripts/check-design.mjs <dir>    check <dir>/site instead (the deliver job checks the
+//                                          agent's tree with the script from main)
 //
 // 1. tokens:   no colour literal (#hex, rgb(), hsl()) outside the :root block of site/styles.css
 // 2. signal:   exactly one element with the class "is-signal" per HTML page
 // 3. requests: no stylesheet, script, font or image loaded from another site
 // 4. basics:   <html lang>, <title>, viewport meta tag, alt text on every <img>
+// 5. safety:   no inline or unknown scripts, event handlers, javascript: URLs, frames or forms in HTML and SVG;
+//              links only within the site or to the hosts in LINK_HOSTS
 
 import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative, extname, dirname } from 'node:path';
+import { join, relative, extname, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = process.argv[2] ? resolve(process.argv[2]) : join(dirname(fileURLToPath(import.meta.url)), '..');
 const SITE = join(ROOT, 'site');
 const problems = [];
 
@@ -25,6 +29,11 @@ const files = (dir) => readdirSync(dir).flatMap((name) => {
 const lineOf = (text, index) => text.slice(0, index).split('\n').length;
 const report = (file, line, rule, message) =>
   problems.push(`${relative(ROOT, file)}:${line}  [${rule}] ${message}`);
+
+// Links to other sites are allowed only to these hosts, so a page can't send visitors anywhere else.
+const LINK_HOSTS = ['florezflow.com', 'www.florezflow.com', 'florezflow.github.io', 'github.com'];
+// The only scripts a page may load: files in site/ that humans maintain (the agent can't change .js).
+const SCRIPT_FILES = ['copy.js'];
 
 const COLOUR = /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?)\(/g;
 
@@ -86,6 +95,69 @@ for (const file of all.filter((f) => extname(f) === '.html')) {
   }
 }
 
+// Rule 5. The agent may build pages from other people's requests, so a page must not run code,
+// embed other sites, collect input or link anywhere but here and the allowed hosts.
+// Browsers decode character references in attributes and drop tabs and newlines inside URLs, so
+// "java&#9;script&colon;" still runs. Decode before checking.
+const NAMED = { colon: ':', sol: '/', tab: '\t', newline: '\n', lpar: '(', rpar: ')', amp: '&', quot: '"', apos: "'", lt: '<', gt: '>', equals: '=' };
+const decode = (s) => s
+  .replace(/&#x([0-9a-f]+);?/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+  .replace(/&#(\d+);?/g, (_, d) => String.fromCodePoint(Number(d)))
+  .replace(/&([a-z]+);/gi, (m, n) => NAMED[n.toLowerCase()] ?? m);
+
+function checkSafety(file, raw) {
+  const text = decode(raw);
+  // Patterns match anywhere in the file, not only inside a "<...>" tag: a quoted ">" in an earlier
+  // attribute would end a naive tag match while the browser keeps reading the same tag.
+  const forbidden = [
+    [/<(?:iframe|frame|frameset|object|embed|applet|portal|form|base|foreignobject|animate|animatemotion|animatetransform|set|handler|listener)\b/gi,
+      'frames, embeds, forms, <base> and SVG animation or foreignObject are not allowed'],
+    [/http-equiv/gi, 'http-equiv (refresh, cookies, policies) is not allowed'],
+    [/url\(\s*["']?\s*(?:[a-z][a-z0-9+.-]*:|\/\/)/gi, 'url() may only point to files in this site'],
+    [/@import\b/gi, '@import is not allowed; put the styles in styles.css'],
+    [/(?:^|[\s/"'`])on[a-z]{3,}\s*=/gim, 'inline event handlers (onclick=…) are not allowed'],
+    [/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:|v\s*b\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, 'javascript: and vbscript: URLs are not allowed'],
+    [/=\s*["'`]?\s*data\s*:/gi, 'data: URLs are not allowed'],
+  ];
+  for (const m of text.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>|<script\b/gi)) {
+    const src = (m[1] || '').match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
+    if (m[2] === undefined || m[2].trim() !== '' || !SCRIPT_FILES.includes(src)) {
+      report(file, lineOf(text, m.index), 'safety',
+        `<script>: only <script src="${SCRIPT_FILES.join('" | "')}"></script> with no inline code`);
+    }
+  }
+  for (const [re, message] of forbidden) {
+    for (const m of text.matchAll(re)) report(file, lineOf(text, m.index), 'safety', message);
+  }
+  const ATTRS = 'href|xlink:href|src|action|formaction|poster|srcset|imagesrcset|ping|background|cite|longdesc|manifest|icon';
+  const urls = [];
+  for (const m of text.matchAll(new RegExp(`[\\s/"'](${ATTRS})\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'gi'))) {
+    const value = m[2] ?? m[3] ?? m[4];
+    const name = m[1].toLowerCase();
+    // srcset lists "url size, url size"; ping lists URLs separated by spaces. Check every one.
+    const parts = name.endsWith('srcset') ? value.split(',').map((c) => c.trim().split(/\s+/)[0])
+      : name === 'ping' ? value.split(/\s+/) : [value];
+    for (const part of parts) urls.push([m.index, part]);
+  }
+  for (const [index, part] of urls) {
+    const url = part.replace(/[\u0000-\u0020]/g, '');
+    if (!url || !/^[a-z][a-z0-9+.-]*:|^\/\//i.test(url)) continue; // relative or #anchor
+    let host = null;
+    try { const u = new URL(url, 'https://example.invalid/'); host = u.protocol === 'https:' ? u.hostname : null; } catch {}
+    if (!host || !LINK_HOSTS.includes(host.toLowerCase())) {
+      report(file, lineOf(text, index), 'safety', `link to "${url}"; allowed: relative links and https://${LINK_HOSTS.join(', https://')}`);
+    }
+  }
+}
+
+for (const file of all.filter((f) => ['.html', '.svg'].includes(extname(f)))) {
+  checkSafety(file, readFileSync(file, 'utf8'));
+}
+
+for (const name of ['index.html', 'styles.css']) {
+  if (!all.includes(join(SITE, name))) report(join(SITE, name), 1, 'basics', 'file is missing');
+}
+
 const checked = all.filter((f) => ['.css', '.html'].includes(extname(f))).length;
 if (problems.length) {
   console.error(`design check: ${problems.length} problem(s) in ${checked} file(s)\n`);
@@ -93,4 +165,4 @@ if (problems.length) {
   console.error('\nRules: DESIGN.md. Fix the file, then run node scripts/check-design.mjs again.');
   process.exit(1);
 }
-console.log(`design check: 4 rules, ${checked} file(s), 0 problems`);
+console.log(`design check: 5 rules, ${checked} file(s), 0 problems`);

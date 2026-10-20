@@ -9,6 +9,8 @@
         "--isolated",
         "--browser",
         "chrome",
+        "--allowed-origins",
+        "http://localhost:4173",
         "--viewport-size",
         "1280x800",
         "--output-dir",

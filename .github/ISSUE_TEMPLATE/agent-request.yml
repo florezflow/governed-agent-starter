@@ -1,0 +1,18 @@
+name: Ask the agent to change the demo site
+description: Claude changes the site and opens a pull request; a person reviews and merges it.
+title: "@claude "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The agent starts on its own for the repository's maintainers and for people who signed up with GitHub. Everyone else waits for a maintainer to approve the issue.
+
+        It may change only the site's HTML, CSS and images, under the rules in `DESIGN.md`: no scripts, no forms, links only to a few allowed sites. Keep the title starting with `@claude`.
+  - type: textarea
+    id: change
+    attributes:
+      label: What should change?
+      description: One change, in a sentence or two. Name the section if you can.
+      placeholder: Make the FAQ collapsible, one row per question.
+    validations:
+      required: true

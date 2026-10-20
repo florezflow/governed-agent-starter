@@ -141,7 +141,7 @@
         <div class="prompt"><code><b>@claude</b> add a dark mode that follows the system setting</code><button class="copy" type="button">copy</button></div>
         <div class="prompt"><code><b>@claude</b> make the guardrails section easier to scan on a phone</code><button class="copy" type="button">copy</button></div>
       </div>
-      <p class="note">Only people with write access to the repository can start the agent. Use the kit in your own repository to try it yourself.</p>
+      <p class="note">Maintainers and people on the allowlist start the agent. Anyone else's request waits for a maintainer to approve it. Use the kit in your own repository to try it yourself.</p>
     </div>
   </section>
 
@@ -154,19 +154,6 @@
   </div>
 </footer>
 
-<script>
-  document.querySelectorAll('.copy').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const text = button.previousElementSibling.textContent;
-      try {
-        await navigator.clipboard.writeText(text);
-        button.textContent = 'copied';
-      } catch {
-        button.textContent = 'select and copy';
-      }
-      setTimeout(() => { button.textContent = 'copy'; }, 1600);
-    });
-  });
-</script>
+<script src="copy.js" defer></script>
 </body>
 </html>

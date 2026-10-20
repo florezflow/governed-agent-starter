@@ -1,21 +1,27 @@
 ---
 name: site-change
-description: Make a change to the demo website in site/ and deliver it as a complete pull request with a plan, a passing design check and before/after screenshots taken with Playwright. Use for every issue or comment that asks to add, change, fix or restyle anything on the site (content, sections, layout, colours, dark mode, mobile view), even if the request is one sentence.
+description: Make a change to the demo website in site/ with a plan, a passing design check and before/after screenshots taken with Playwright, ready for the deliver job to turn into a pull request. Use for every issue or comment that asks to add, change, fix or restyle anything on the site (content, sections, layout, colours, dark mode, mobile view), even if the request is one sentence.
 ---
 
-# Change the site and open the pull request
+# Change the site, ready for review
 
-You deliver a change a human can review in two minutes: the plan, the diff, the check result and
-screenshots. Do the steps in order. `<n>` is the issue or PR number from the prompt, `<owner>/<repo>`
-is the repository from the prompt.
+You produce a change a human can review in two minutes: the plan, the diff, the check result and
+screenshots. Do the steps in order. `<n>` is the issue number from the prompt.
+
+You don't commit, push or open the pull request, and you have no tools for it. When you finish, the
+deliver job (no model) takes your changes in `site/` and `screenshots/`, checks them again and opens
+the pull request with your title and summary. Changes anywhere else are dropped.
 
 ## 1. Understand and plan
 
 - Read `CLAUDE.md` and `DESIGN.md`, then the files in `site/` you will touch.
-- Write a plan of two to five bullets into your tracking comment: what changes, which files, which
-  `DESIGN.md` components you use.
+- Write a plan of two to five bullets into `.agent/summary.md` under `## Plan`: what changes, which
+  files, which `DESIGN.md` components you use.
 - If the request conflicts with `DESIGN.md` (for example a second yellow button, a web font, a colour
-  outside the tokens), follow `DESIGN.md` and say in the comment what you did instead and why.
+  outside the tokens, a script, a link to another site), follow `DESIGN.md` and say in the summary
+  what you did instead and why.
+- If the request isn't a change to the site at all, change nothing, explain in `.agent/summary.md`
+  and stop.
 
 ## 2. Screenshot the current page (before)
 
@@ -30,7 +36,8 @@ The filename is relative to the repository root, so the file lands in `screensho
 
 ## 3. Make the change
 
-- Edit only `site/` (and a doc file if the issue explicitly asks).
+- Edit only `site/`: HTML, CSS, SVG and images. `.js` files are maintained by people; you can't
+  change them, and no page may contain inline scripts or event handlers.
 - Colours, fonts, radius and shadow come from the tokens in the `:root` block of `site/styles.css`.
   Add a new token there only if no existing one fits, and use it by name.
 - Exactly one element keeps the class `is-signal`. New buttons are secondary (`btn` without
@@ -53,42 +60,30 @@ Run `node scripts/check-design.mjs`. If it reports problems, fix them and run it
 4. Read both PNG files and check them against `DESIGN.md`: one yellow element, ink outlines, nothing
    cut off or overlapping, readable on the phone. Fix and re-take them if something is wrong.
 
-## 6. Commit and push
+## 6. Write the title and summary
 
-- `git add site/ screenshots/` (plus a doc file if you changed one)
-- Commit message: `site: <what changed, outcome first> (#<n>)`
-- Push with the push script named in your instructions.
-- `git rev-parse HEAD` → the commit SHA for the image links.
-
-## 7. Open the pull request yourself
-
-On an **issue**: call `mcp__github__create_pull_request` with `owner`, `repo`, `base: "main"`,
-`head: <your branch>`, a title of at most 65 characters that names the outcome, and this body
-(it follows `.github/pull_request_template.md`):
+- `.agent/title.txt`: one line, at most 65 characters, outcome first, for example
+  `site: fold the FAQ into one row per question`.
+- `.agent/summary.md`, plain text the reviewer reads in the pull request:
 
 ```markdown
 ## Plan
-- <the bullets from step 1>
+- <the bullets from step 1, ticked off or with what changed>
 
 ## What changed
 - <file>: <what and why, one line each>
 
 ## Design check
-`<last line of node scripts/check-design.mjs>`
+<last line of node scripts/check-design.mjs>
 
-## Screenshots
-| Before | After, desktop | After, phone |
-|---|---|---|
-| ![before](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/screenshots/<n>-before-desktop.png) | ![after desktop](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/screenshots/<n>-after-desktop.png) | ![after phone](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/screenshots/<n>-after-mobile.png) |
-
-Closes #<n>
+## Not done
+- <anything from the request you skipped, and why; or "nothing">
 ```
 
-On an **open pull request** (a follow-up `@claude` comment): push to the existing branch, replace the
-screenshots with new ones under the same names, and update the body with
-`mcp__github__update_pull_request` instead of opening a new PR.
+Links and mentions in the summary don't render: the deliver job shows it as plain text and adds the
+file list, its own check result and the screenshots.
 
-## 8. Finish
+## 7. Finish
 
-Update your tracking comment: the plan ticked off, the PR link, and anything you did not do. Never
-merge or approve the pull request; a human does that.
+Stop when the files are written. Never try to commit, push, merge or approve; a human reviews the
+pull request and merges it.
