@@ -5,7 +5,8 @@
       "Skill",
       "Bash(node scripts/check-design.mjs)",
       "Bash(git status)",
-      "Bash(git diff *)",
+      "Bash(git diff)",
+      "Bash(git diff --stat)",
       "mcp__playwright__browser_navigate",
       "mcp__playwright__browser_resize",
       "mcp__playwright__browser_take_screenshot",
@@ -42,7 +43,9 @@
       "Edit(./.mcp.json)",
       "Edit(./scripts/**)",
       "Edit(./site/**/*.js)",
-      "Edit(./site/*.js)"
+      "Edit(./site/*.js)",
+      "Bash(git diff --no-index *)",
+      "Bash(git diff --output *)"
     ]
   }
 }

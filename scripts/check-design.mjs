@@ -107,13 +107,17 @@ const decode = (s) => s
 
 function checkSafety(file, raw) {
   const text = decode(raw);
+  // Patterns match anywhere in the file, not only inside a "<...>" tag: a quoted ">" in an earlier
+  // attribute would end a naive tag match while the browser keeps reading the same tag.
   const forbidden = [
-    [/<(?:iframe|frame|object|embed|form|base)\b/gi, 'frames, embeds, forms and <base> are not allowed'],
-    [/<meta\b[^>]*http-equiv\s*=\s*["']?refresh/gi, 'meta refresh redirects are not allowed'],
+    [/<(?:iframe|frame|frameset|object|embed|applet|portal|form|base|foreignobject|animate|animatemotion|animatetransform|set|handler|listener)\b/gi,
+      'frames, embeds, forms, <base> and SVG animation or foreignObject are not allowed'],
+    [/http-equiv/gi, 'http-equiv (refresh, cookies, policies) is not allowed'],
     [/url\(\s*["']?\s*(?:[a-z][a-z0-9+.-]*:|\/\/)/gi, 'url() may only point to files in this site'],
     [/@import\b/gi, '@import is not allowed; put the styles in styles.css'],
-    [/<[^>]*[\s/"']on[a-z]+\s*=/gi, 'inline event handlers (onclick=…) are not allowed'],
-    [/(?:j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t|vbscript|data)\s*:/gi, 'javascript:, vbscript: and data: URLs are not allowed'],
+    [/(?:^|[\s/"'`])on[a-z]{3,}\s*=/gim, 'inline event handlers (onclick=…) are not allowed'],
+    [/j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*:|v\s*b\s*s\s*c\s*r\s*i\s*p\s*t\s*:/gi, 'javascript: and vbscript: URLs are not allowed'],
+    [/=\s*["'`]?\s*data\s*:/gi, 'data: URLs are not allowed'],
   ];
   for (const m of text.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>|<script\b/gi)) {
     const src = (m[1] || '').match(/\bsrc\s*=\s*["']([^"']+)["']/i)?.[1];
@@ -125,13 +129,23 @@ function checkSafety(file, raw) {
   for (const [re, message] of forbidden) {
     for (const m of text.matchAll(re)) report(file, lineOf(text, m.index), 'safety', message);
   }
-  for (const m of text.matchAll(/[\s/"'](?:href|xlink:href|src|action|formaction|poster|srcset)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
-    const url = (m[1] ?? m[2] ?? m[3]).replace(/[\u0000-\u0020]/g, '');
-    if (!/^[a-z][a-z0-9+.-]*:|^\/\//i.test(url)) continue; // relative or #anchor
+  const ATTRS = 'href|xlink:href|src|action|formaction|poster|srcset|imagesrcset|ping|background|cite|longdesc|manifest|icon';
+  const urls = [];
+  for (const m of text.matchAll(new RegExp(`[\\s/"'](${ATTRS})\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'gi'))) {
+    const value = m[2] ?? m[3] ?? m[4];
+    const name = m[1].toLowerCase();
+    // srcset lists "url size, url size"; ping lists URLs separated by spaces. Check every one.
+    const parts = name.endsWith('srcset') ? value.split(',').map((c) => c.trim().split(/\s+/)[0])
+      : name === 'ping' ? value.split(/\s+/) : [value];
+    for (const part of parts) urls.push([m.index, part]);
+  }
+  for (const [index, part] of urls) {
+    const url = part.replace(/[\u0000-\u0020]/g, '');
+    if (!url || !/^[a-z][a-z0-9+.-]*:|^\/\//i.test(url)) continue; // relative or #anchor
     let host = null;
     try { const u = new URL(url, 'https://example.invalid/'); host = u.protocol === 'https:' ? u.hostname : null; } catch {}
     if (!host || !LINK_HOSTS.includes(host.toLowerCase())) {
-      report(file, lineOf(text, m.index), 'safety', `link to "${url}"; allowed: relative links and https://${LINK_HOSTS.join(', https://')}`);
+      report(file, lineOf(text, index), 'safety', `link to "${url}"; allowed: relative links and https://${LINK_HOSTS.join(', https://')}`);
     }
   }
 }

@@ -133,7 +133,9 @@ jobs:
             </request>
 
             Use the site-change skill. The issue number for file names is ${{ github.event.issue.number }}.
-          # --allowedTools adds to the read-only defaults. acceptEdits lets Claude edit files inside
+          # --allowedTools adds to the read-only defaults. Exact git commands only: `git diff <args>`
+          # could read any file on the runner (--no-index), including the process environment.
+          # acceptEdits lets Claude edit files inside
           # the repository only; don't list Edit or Write, that would allow writes anywhere on the
           # runner. No mcp__github__ tools: Claude doesn't push or open the pull request, the deliver
           # job does. .claude/settings.json holds the same allow list and the deny rules.
@@ -141,7 +143,7 @@ jobs:
             --model claude-haiku-5-5
             --max-turns 40
             --permission-mode acceptEdits
-            --allowedTools "Skill,Bash(node scripts/check-design.mjs),Bash(git status),Bash(git diff *),mcp__playwright__browser_navigate,mcp__playwright__browser_resize,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_snapshot,mcp__playwright__browser_wait_for,mcp__playwright__browser_close"
+            --allowedTools "Skill,Bash(node scripts/check-design.mjs),Bash(git status),Bash(git diff),Bash(git diff --stat),mcp__playwright__browser_navigate,mcp__playwright__browser_resize,mcp__playwright__browser_take_screenshot,mcp__playwright__browser_snapshot,mcp__playwright__browser_wait_for,mcp__playwright__browser_close"
 
       # Only site/ and screenshots/ go into the diff. Anything else Claude touched is listed, not sent.
       - name: Package the change

@@ -183,7 +183,7 @@ async function main() {
   const open = await api('GET', `/repos/${REPO}/pulls?state=open&head=${encodeURIComponent(`${owner}:${branch}`)}`);
   const pr = open.length
     ? await api('PATCH', `/repos/${REPO}/pulls/${open[0].number}`, { title, body })
-    : await api('POST', `/repos/${REPO}/pulls`, { title, body, head: branch, base: env.DEFAULT_BRANCH, maintainer_can_modify: true });
+    : await api('POST', `/repos/${REPO}/pulls`, { title, body, head: branch, base: env.DEFAULT_BRANCH });
 
   // 7. Pushes made with the workflow token start no workflows, so start the required check by hand.
   await api('POST', `/repos/${REPO}/actions/workflows/checks.yml/dispatches`, { ref: branch });
