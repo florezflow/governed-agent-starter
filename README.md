@@ -10,7 +10,23 @@ merge; merging publishes the demo site.
 Other people can use the agent without any rights in the repository: maintainers start it, people
 on an allowlist start it within a daily quota, and everyone else waits for a maintainer's approval.
 
-**Live demo site:** <https://florezflow.github.io/governed-agent-starter/> (after Pages is enabled)
+**Live demo site:** <https://florezflow.github.io/governed-agent-starter/>
+
+## Try it
+
+You can use the agent on this repository without any rights in it.
+
+1. **[Sign in with GitHub](https://n8n.marcoflorez.com/webhook/site-agent-signup).** It reads only your
+   public profile and puts your username on the allowlist. Accounts must be at least 30 days old.
+2. **[Open an issue](https://github.com/florezflow/governed-agent-starter/issues/new?template=agent-request.yml)**
+   that starts with `@claude` and says what should change on the demo site, for example
+   `@claude add a dark mode that follows the system setting`.
+3. **A pull request arrives** a few minutes later, with the plan, the checks and screenshots. A person
+   reviews it; merging publishes the [demo site](https://florezflow.github.io/governed-agent-starter/).
+
+You have 3 requests a day. Without signing up, your issue waits until a maintainer approves it with
+the label `agent-approved`. What gets stored: your GitHub username, its numeric id and when you signed
+up. To be removed, open an issue.
 
 ## What's in here
 
@@ -31,17 +47,6 @@ on an allowlist start it within a daily quota, and everyone else waits for a mai
 | `.github/ISSUE_TEMPLATE/` | The issue form for requests to the agent |
 | `.github/workflows/pages.yml` | Publishes `site/` to GitHub Pages when a change lands on `main` |
 | `.github/workflows/wif-smoke-test.yml` | Checks the federation from both sides (`/wif-test` comment) |
-
-## Try it
-
-Open an issue with the form **Ask the agent to change the demo site**, for example:
-
-```
-@claude add a FAQ section with three questions a team lead would ask
-```
-
-If you're not a maintainer or on the allowlist, a maintainer approves the issue with the label
-`agent-approved`, and the agent starts then.
 
 ## Guardrails
 
