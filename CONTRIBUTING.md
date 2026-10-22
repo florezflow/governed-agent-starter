@@ -42,7 +42,7 @@ per question."
 - **Only the site**: the deliver job accepts changes to `site/` (HTML, CSS, SVG, images) and `screenshots/` only. JavaScript, docs and everything else are changed by people.
 - **Model**: Claude runs on Haiku 5.5, the cheapest model. For harder, multi-file changes the workflow can be switched to `claude-sonnet-5-5` in `.github/workflows/claude.yml`.
 - **Spend limit**: runs stop when the workspace's monthly spend limit in the Claude Console is reached.
-- **No changes to its own guardrails**: `.claude/settings.json` denies edits to `.github/`, `.claude/`, `CLAUDE.md`, `.mcp.json` and `scripts/`, and the deliver job drops them. Those changes must be made by a human.
+- **No changes to its own guardrails**: `.claude/settings.json` denies edits to `.github/`, `.claude/`, `hooks/`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json` and `scripts/`, and the deliver job drops them. Those changes must be made by a human.
 - **No pushing, merging or approving**: Claude has no write token. The ruleset on `main` requires a code owner's review.
 
 ## Reviewing Claude's work

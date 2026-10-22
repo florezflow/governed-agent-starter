@@ -2,7 +2,8 @@
 
 This repository is a demo of the **Governed Agent Starter**: a small static website in `site/` that
 an AI agent changes through issues and pull requests, under guardrails a human controls. Read this
-file, then `DESIGN.md`, before you change anything.
+file, then `DESIGN.md`, before you change anything. `AGENTS.md` has the same rules for other agents;
+the two files change together.
 
 | Path | What | Who changes it |
 |---|---|---|
@@ -13,8 +14,10 @@ file, then `DESIGN.md`, before you change anything.
 | `scripts/check-design.mjs` | Enforces the checked rules of `DESIGN.md`, including the safety rule | humans |
 | `scripts/agent-gate.mjs`, `scripts/agent-deliver.mjs` | Decide who may start you; check your diff and open the PR | humans |
 | `.claude/` | Your settings and skills | humans only (denied for you) |
+| `hooks/` | Example Claude Code hooks, off unless a person switches them on | humans only (denied for you) |
 | `.github/` | Workflows, PR template, ruleset, code owners | humans only (denied for you) |
 | `.mcp.json` | MCP servers (Playwright for screenshots) | humans only |
+| `AGENTS.md` | These rules for other agents (Copilot, Codex) | humans only (denied for you) |
 
 ## Rules
 
@@ -23,7 +26,8 @@ file, then `DESIGN.md`, before you change anything.
 2. **Follow `DESIGN.md`.** `node scripts/check-design.mjs` must report 0 problems before you finish.
 3. **Stay in `site/` and `screenshots/`.** The deliver job drops changes anywhere else, so docs
    such as `README.md` or `DESIGN.md` are changed by people.
-4. **Never change the guardrails:** `.github/`, `.claude/`, `CLAUDE.md`, `.mcp.json`, `scripts/`.
+4. **Never change the guardrails:** `.github/`, `.claude/`, `hooks/`, `CLAUDE.md`, `AGENTS.md`,
+   `.mcp.json`, `scripts/`.
    Your settings deny it. If a task needs such a change, say so in the summary and stop.
 5. **One issue, one pull request.** Keep diffs small. No new dependencies, no build step, no
    JavaScript, no fonts, scripts or images loaded from other sites, links only to the hosts the
