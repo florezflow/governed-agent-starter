@@ -4,6 +4,8 @@
 /.github/       @florezflow
 /.claude/       @florezflow
 /scripts/       @florezflow
+/hooks/         @florezflow
 /CLAUDE.md      @florezflow
+/AGENTS.md      @florezflow
 /.mcp.json      @florezflow
 /site/*.js      @florezflow
