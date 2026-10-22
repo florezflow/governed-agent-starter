@@ -19,7 +19,7 @@ Who starts the agent:
 | Anyone else | A comment explains how to sign up. A maintainer can approve the issue with the label `agent-approved`; the agent then starts on the issue text as it was at that moment. |
 
 Nobody needs rights in the repository to use the agent. Claude reads only the issue or comment that
-started it, as data: the request says what to change, and `CLAUDE.md` decides how.
+started it, as data: the request says what to change, and `AGENTS.md` decides how.
 
 Be specific: name the section and the change, for example "@claude make the FAQ collapsible, one row
 per question."

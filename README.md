@@ -35,8 +35,8 @@ up. To be removed, open an issue.
 | `site/` | The demo website: one HTML page, one stylesheet, no build step, no external requests |
 | `DESIGN.md` | The design language ("Swiss Pop Lite"): tokens, rules, components, words |
 | `scripts/check-design.mjs` | Enforces the checked rules of `DESIGN.md`, including the safety rule (no scripts, forms or outside links); runs on every PR (`checks.yml`) |
-| `CLAUDE.md` | The agent's rulebook: where it may work, what it must never touch |
-| `AGENTS.md` | The same rules for other agents: Copilot, Codex, a local session |
+| `AGENTS.md` | The rulebook for any agent (Claude Code, Copilot, Codex): where it may work, what it must never touch |
+| `CLAUDE.md` | Imports `AGENTS.md` and adds what Claude Code needs in the workflow |
 | `CHECKLIST.md` | One page to go through before any agent gets commit rights |
 | `.claude/settings.json` | Allowed tools, and deny rules so the agent can't edit its own guardrails |
 | `.claude/skills/site-change/` | The skill the agent loads for any site change: plan, check, screenshots, PR |

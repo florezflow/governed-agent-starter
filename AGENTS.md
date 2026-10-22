@@ -1,8 +1,8 @@
 # AGENTS.md
 
-Rules for any coding agent in this repository: GitHub Copilot, Codex, Claude Code or a local
-session. Claude Code reads `CLAUDE.md`, which has the same rules and adds how the `claude.yml`
-workflow runs it. The two files change together, in one pull request.
+The rules for any coding agent in this repository: GitHub Copilot, Codex, Claude Code or a local
+session. Claude Code gets them through `CLAUDE.md`, which imports this file and adds only what is
+specific to the `claude.yml` workflow. Rules for every agent go here, not there.
 
 This repository is a demo of the **Governed Agent Starter**: a small static website in `site/` that
 an agent changes through issues and pull requests, under guardrails a human controls. Read this
